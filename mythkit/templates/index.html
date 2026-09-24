@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MAKEMYDRUMKIT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+<main id="app">
+
+  <!-- SCREEN 0: SPLASH -->
+  <section class="screen active" id="screen-splash">
+    <div class="splash-inner">
+      <h1 class="glitch-title">MAKEMYDRUMKIT</h1>
+      <div class="title-rule"></div>
+      <p class="by-line">by <span class="accent">LOSTINLIMERENCE</span></p>
+      <a class="insta-link" href="https://instagram.com/lostinlimerence__" target="_blank" rel="noopener noreferrer">
+        <span class="dot">◆</span> @lostinlimerence__ on instagram <span class="dot">◆</span>
+      </a>
+      <button class="btn btn-primary" id="btn-start">
+        <span>INITIALIZE</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- SCREEN 1: NAME -->
+  <section class="screen" id="screen-name">
+    <div class="step-inner">
+      <p class="step-label">// STEP 01</p>
+      <h2 class="step-title">WHO'S BUILDING THIS KIT?</h2>
+      <input type="text" id="input-name" class="field" placeholder="your name or alias" autocomplete="off" />
+      <button class="btn btn-primary" id="btn-name-next" disabled>CONTINUE →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 2: WORLD -->
+  <section class="screen" id="screen-world">
+    <div class="step-inner">
+      <p class="step-label">// STEP 02</p>
+      <h2 class="step-title">DESCRIBE YOUR WORLD</h2>
+      <p class="step-hint">your artistic identity and world — describe it in a few words. no wrong answers, it shapes the name of every sound in the kit.</p>
+      <textarea id="input-world" class="field" rows="3" placeholder="however you'd describe it to someone who gets it"></textarea>
+      <button class="btn btn-primary" id="btn-world-next" disabled>CONTINUE →</button>
+    </div>
+  </section>
+
+  <!-- SCREEN 3: SOURCE SELECT -->
+  <section class="screen" id="screen-source">
+    <div class="step-inner step-inner-wide">
+      <p class="step-label">// STEP 03</p>
+      <h2 class="step-title">SCAN YOUR BEATS</h2>
+      <p class="step-hint">this reads your .flp projects and builds the kit from the sounds you actually use — ranked by how often each one shows up across your beats.</p>
+
+      <label class="field-label">FL Studio projects folder</label>
+      <div class="row">
+        <input type="text" id="input-projects-root" class="field" value="{{ default_projects_root }}" placeholder="C:\Users\you\Documents\Image-Line\FL Studio\Projects" />
+        <button class="btn btn-ghost" id="btn-scan">SCAN</button>
+      </div>
+
+      <div id="folder-list-wrap" class="hidden">
+        <div class="row folder-list-header">
+          <span id="folder-count-label" class="field-label">FOLDERS FOUND</span>
+          <span class="folder-actions">
+            <a href="#" id="select-all">select all</a> / <a href="#" id="select-none">none</a>
+          </span>
+        </div>
+        <div id="folder-list" class="folder-list"></div>
+      </div>
+
+      <label class="field-label">Sample library search paths <span class="optional">(optional — semicolon-separated; used to recover samples whose stored path no longer exists, e.g. moved drives)</span></label>
+      <input type="text" id="input-library-roots" class="field" value="{{ default_library_roots }}" placeholder="C:\Users\you\Desktop\DRUMKITS" />
+
+      <label class="field-label">Output folder</label>
+      <input type="text" id="input-output-root" class="field" value="{{ default_output_root }}" placeholder="C:\Users\you\Desktop" />
+
+      <div class="toggles">
+        <label class="toggle"><input type="checkbox" id="toggle-audio-analysis" checked /> Use audio analysis for ambiguous files</label>
+        <label class="toggle"><input type="checkbox" id="toggle-audio-dedupe" checked /> Detect near-duplicate sounds</label>
+      </div>
+
+      <button class="btn btn-primary" id="btn-build" disabled>BUILD MY KIT →</button>
+      <p class="error-text hidden" id="source-error"></p>
+    </div>
+  </section>
+
+  <!-- SCREEN 4: PROCESSING -->
+  <section class="screen" id="screen-processing">
+    <div class="processing-inner">
+      <div class="spinner"></div>
+      <p class="processing-text" id="processing-text">PARSING PROJECT FILES...</p>
+    </div>
+  </section>
+
+  <!-- SCREEN 5: RESULTS -->
+  <section class="screen" id="screen-results">
+    <div class="results-inner">
+      <p class="step-label">// KIT COMPILED</p>
+      <h2 class="step-title" id="results-kit-name">YOUR DRUMKIT</h2>
+      <p class="results-path" id="results-path"></p>
+
+      <div class="stats-row" id="stats-row"></div>
+
+      <div id="categories-wrap"></div>
+
+      <div class="results-actions">
+        <button class="btn btn-ghost" id="btn-reveal">REVEAL IN EXPLORER</button>
+        <button class="btn btn-primary" id="btn-restart">BUILD ANOTHER</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
