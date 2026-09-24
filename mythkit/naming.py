@@ -49,14 +49,28 @@ THEME_BANKS: dict[str, dict[str, list[str]]] = {
         "adjectives": ["SACRED", "BURIED", "ETERNAL"],
     },
     "anime": {
-        "keywords": ["anime", "manga", "japan", "japanese", "otaku", "tokyo"],
+        "keywords": [
+            "anime", "manga", "japan", "japanese", "otaku", "tokyo",
+            "naruto", "dragon ball", "one piece", "demon slayer", "jujutsu",
+            "attack on titan", "bleach", "pokemon", "gundam", "shonen",
+        ],
         "nouns": [
+            # aesthetic/vibe words
             "SENSEI", "RONIN", "KATANA", "SHOGUN", "SAMURAI", "KAIJU", "YOKAI", "ONI",
             "DOJO", "KITSUNE", "SHINIGAMI", "SAKURA", "BUSHIDO", "IREZUMI", "SATORI",
             "ZANSHIN", "NEKO", "TENGU", "RYUJIN", "AMATERASU", "SUSANOO", "HANNYA",
             "MUSHIN", "GENSO",
+            # iconic titles, characters, moves — widely-known cultural
+            # references, not just mood words, since these are the ones
+            # that actually make an "anime" kit feel unmistakably anime
+            "NARUTO", "SASUKE", "ITACHI", "KAKASHI", "GOKU", "VEGETA", "GOJO",
+            "SUKUNA", "ZENITSU", "TANJIRO", "NEZUKO", "LUFFY", "ZORO", "LEVI",
+            "EREN", "MIKASA", "LIGHT", "ICHIGO", "RUKIA", "DEKU", "BAKUGO",
+            "TODOROKI", "KILLUA", "GON", "MELIODAS", "GUTS", "AKATSUKI",
+            "SHARINGAN", "BANKAI", "KAMEHAMEHA", "GUNDAM", "POKEMON", "AKIRA",
+            "BERSERK", "EVANGELION",
         ],
-        "adjectives": ["ROGUE", "SILENT", "CRIMSON", "HOLLOW"],
+        "adjectives": ["ROGUE", "SILENT", "CRIMSON", "HOLLOW", "UNSEALED", "FORBIDDEN"],
     },
     "cyberpunk": {
         "keywords": ["cyberpunk", "cyber", "futuristic", "sci-fi", "scifi", "tech", "robot", "ai", "hacker", "neon", "matrix"],
@@ -126,6 +140,38 @@ THEME_BANKS: dict[str, dict[str, list[str]]] = {
             "ROSEWATER", "LOVESICK", "DREAMSTATE", "EUPHORIA", "HALCYON", "BUTTERFLIES",
         ],
         "adjectives": ["TENDER", "LOVESICK", "FADED", "INTOXICATED"],
+    },
+    "food": {
+        "keywords": ["food", "snack", "cooking", "kitchen", "eat", "yummy", "tasty", "cuisine", "chef", "hungry"],
+        "nouns": [
+            # literal foods
+            "MANGO", "PEACH", "HONEY", "SUGAR", "CREAM", "BUTTER", "CARAMEL", "CHERRY",
+            "MOCHI", "RAMEN", "SUSHI", "TACO", "MATCHA", "WASABI", "CHILI", "COCONUT",
+            "PINEAPPLE", "STRAWBERRY", "LEMONADE", "GUAVA", "PAPAYA", "TIRAMISU",
+            "GELATO", "ESPRESSO", "MOCHA", "CINNAMON", "VANILLA", "PISTACHIO", "ICHIGO",
+            # food-flavored hype words / sayings — this is the part that
+            # actually sounds like someone describing food out loud
+            "YUM", "YUMMY", "DELICIOUS", "SAUCY", "SAUCE", "SPICY", "JUICY", "CRISPY",
+            "SEASONED", "MARINATED", "FRESH", "SWEET", "SAVORY", "CHEF", "COOKED",
+            "SIMMERING", "BAKED", "GLAZED", "SCRUMPTIOUS", "BUTTERY",
+        ],
+        "adjectives": ["SWEET", "SPICY", "JUICY", "FRESH", "SAVORY", "ZESTY"],
+    },
+    "genz": {
+        "keywords": [
+            "gen z", "genz", "slang", "internet", "meme", "brainrot", "brain rot",
+            "chronically online", "terminally online", "sigma", "rizz", "skibidi",
+            "ohio", "delulu",
+        ],
+        "nouns": [
+            "RIZZ", "SIGMA", "GYATT", "SLAY", "DELULU", "MID", "SUS", "BASED", "GOATED",
+            "BUSSIN", "CRINGE", "SKIBIDI", "OHIO", "AURA", "BRAINROT", "ZESTY",
+            "CHOPPED", "MEWING", "NPC", "BLUD", "CAP", "BET", "GLAZED", "RATIO",
+            "TOUCH GRASS", "LOCKED IN", "NO CAP", "MAIN CHARACTER", "RENT FREE",
+            "HITS DIFFERENT", "CHRONICALLY ONLINE", "FANUM TAX", "SIGMA GRINDSET",
+            "GIRL DINNER", "DEMURE", "UNSERIOUS", "IYKYK",
+        ],
+        "adjectives": ["LOWKEY", "HIGHKEY", "UNHINGED", "ICONIC", "UNSERIOUS", "FERAL"],
     },
 }
 
@@ -229,7 +275,15 @@ def _stylize(phrase: str, rng: random.Random) -> str:
 
 @dataclass
 class NamePool:
-    nouns: list[str]
+    # Three tiers, most theme-specific first — a plain noun (and, once
+    # nouns run out, an ADJ+NOUN combo) is always drawn from the most
+    # specific tier that still has unused words. This is what actually
+    # makes names track the theme: two different "describe your world"
+    # inputs that don't happen to match the same curated bank still sound
+    # completely different, because tier 1 is always literally the words
+    # the user themselves typed.
+    user_nouns: list[str]
+    bank_nouns: list[str]
     adjectives: list[str]
     rng: random.Random
     used: set[str] = field(default_factory=set)
@@ -242,24 +296,30 @@ class NamePool:
         return None
 
     def _next_canonical(self) -> str:
-        # 1. Plain noun.
-        shuffled_nouns = self.nouns[:]
-        self.rng.shuffle(shuffled_nouns)
-        for n in shuffled_nouns:
-            got = self._try_use(n)
-            if got:
-                return got
+        noun_tiers = [self.user_nouns, self.bank_nouns, UNIVERSAL_NOUNS]
 
-        # 2. ADJ NOUN combo.
-        combos = [(a, n) for a in self.adjectives for n in self.nouns]
-        self.rng.shuffle(combos)
-        for a, n in combos:
-            got = self._try_use(f"{a} {n}")
-            if got:
-                return got
+        # 1. Plain noun — most theme-specific tier with any word left wins.
+        for tier in noun_tiers:
+            shuffled = tier[:]
+            self.rng.shuffle(shuffled)
+            for n in shuffled:
+                got = self._try_use(n)
+                if got:
+                    return got
+
+        # 2. ADJ NOUN combo — same tier order, so combos still lean on the
+        # user's own words / matched theme before falling back to filler.
+        for tier in noun_tiers:
+            combos = [(a, n) for a in self.adjectives for n in tier]
+            self.rng.shuffle(combos)
+            for a, n in combos:
+                got = self._try_use(f"{a} {n}")
+                if got:
+                    return got
 
         # 3. Numbered fallback — guarantees we never fail to produce a name.
-        base = self.rng.choice(self.nouns) if self.nouns else "SOUND"
+        all_nouns = self.user_nouns + self.bank_nouns + UNIVERSAL_NOUNS
+        base = self.rng.choice(all_nouns) if all_nouns else "SOUND"
         i = 2
         while True:
             got = self._try_use(f"{base} {i}")
@@ -279,19 +339,22 @@ def build_name_pool(world_text: str, producer_name: str) -> NamePool:
     seed_text = f"{producer_name}|{world_text}|{','.join(matched)}"
     rng = random.Random(seed_text)
 
-    nouns: list[str] = []
+    bank_nouns: list[str] = []
     adjectives: list[str] = []
     for key in matched:
         bank = THEME_BANKS[key]
-        nouns.extend(bank["nouns"])
+        bank_nouns.extend(bank["nouns"])
         adjectives.extend(bank.get("adjectives", []))
 
-    nouns.extend(_extract_user_words(world_text))
-    nouns.extend(UNIVERSAL_NOUNS)
     adjectives.extend(UNIVERSAL_ADJECTIVES)
 
-    # de-dupe while preserving order
-    nouns = list(dict.fromkeys(n for n in nouns if n))
+    user_nouns = _extract_user_words(world_text)
+
+    # de-dupe while preserving order (and keep tiers mutually exclusive —
+    # a word the user typed that also happens to be in a bank stays in
+    # the higher-priority user-words tier only)
+    user_nouns = list(dict.fromkeys(n for n in user_nouns if n))
+    bank_nouns = list(dict.fromkeys(n for n in bank_nouns if n and n not in user_nouns))
     adjectives = list(dict.fromkeys(a for a in adjectives if a))
 
-    return NamePool(nouns=nouns, adjectives=adjectives, rng=rng)
+    return NamePool(user_nouns=user_nouns, bank_nouns=bank_nouns, adjectives=adjectives, rng=rng)
