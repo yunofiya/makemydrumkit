@@ -37,10 +37,30 @@
     </div>
   </section>
 
+  <!-- SCREEN 1.5: MODE -->
+  <section class="screen" id="screen-mode">
+    <div class="step-inner">
+      <p class="step-label">// STEP 02</p>
+      <h2 class="step-title">THEMED KIT OR STASH?</h2>
+      <p class="step-hint">themed renames every sound to fit your world. stash keeps the original filenames — same scanning, sorting, and dedupe, no renaming.</p>
+      <div class="mode-options">
+        <button type="button" class="mode-option" id="mode-themed" data-mode="themed">
+          <span class="mode-option-title">THEMED KIT</span>
+          <span class="mode-option-desc">renames every sound to match your world</span>
+        </button>
+        <button type="button" class="mode-option" id="mode-stash" data-mode="stash">
+          <span class="mode-option-title">STASH</span>
+          <span class="mode-option-desc">keeps original filenames, just sorted &amp; deduped</span>
+        </button>
+      </div>
+      <button class="btn btn-primary" id="btn-mode-next" disabled>CONTINUE →</button>
+    </div>
+  </section>
+
   <!-- SCREEN 2: WORLD -->
   <section class="screen" id="screen-world">
     <div class="step-inner">
-      <p class="step-label">// STEP 02</p>
+      <p class="step-label">// STEP 03</p>
       <h2 class="step-title">DESCRIBE YOUR WORLD</h2>
       <p class="step-hint">your artistic identity and world — describe it in a few words. no wrong answers, it shapes the name of every sound in the kit.</p>
       <textarea id="input-world" class="field" rows="3" placeholder="however you'd describe it to someone who gets it"></textarea>
@@ -51,7 +71,7 @@
   <!-- SCREEN 3: SOURCE SELECT -->
   <section class="screen" id="screen-source">
     <div class="step-inner step-inner-wide">
-      <p class="step-label">// STEP 03</p>
+      <p class="step-label" id="source-step-label">// STEP 04</p>
       <h2 class="step-title">SCAN YOUR BEATS</h2>
       <p class="step-hint">this reads your .flp projects and builds the kit from the sounds you actually use — ranked by how often each one shows up across your beats.</p>
 
@@ -100,6 +120,7 @@
     <div class="results-inner">
       <p class="step-label">// KIT COMPILED</p>
       <h2 class="step-title" id="results-kit-name">YOUR DRUMKIT</h2>
+      <span class="mode-badge" id="results-mode-badge"></span>
       <p class="results-path" id="results-path"></p>
 
       <div class="stats-row" id="stats-row"></div>

@@ -2,6 +2,7 @@
   const state = {
     producerName: "",
     worldText: "",
+    stashMode: false,
     projectsRoot: "",
     selectedFolders: new Set(),
     libraryRoots: "",
@@ -13,6 +14,7 @@
   const screens = {
     splash: document.getElementById("screen-splash"),
     name: document.getElementById("screen-name"),
+    mode: document.getElementById("screen-mode"),
     world: document.getElementById("screen-world"),
     source: document.getElementById("screen-source"),
     processing: document.getElementById("screen-processing"),
@@ -38,7 +40,34 @@
   });
   btnNameNext.addEventListener("click", () => {
     state.producerName = inputName.value.trim();
-    goTo("world");
+    goTo("mode");
+  });
+
+  // ---------- Screen 1.5: mode (themed vs stash) ----------
+  const modeThemed = document.getElementById("mode-themed");
+  const modeStash = document.getElementById("mode-stash");
+  const btnModeNext = document.getElementById("btn-mode-next");
+  const sourceStepLabel = document.getElementById("source-step-label");
+  let modeChosen = null;
+
+  function selectMode(mode) {
+    modeChosen = mode;
+    modeThemed.classList.toggle("selected", mode === "themed");
+    modeStash.classList.toggle("selected", mode === "stash");
+    btnModeNext.disabled = false;
+  }
+  modeThemed.addEventListener("click", () => selectMode("themed"));
+  modeStash.addEventListener("click", () => selectMode("stash"));
+
+  btnModeNext.addEventListener("click", () => {
+    state.stashMode = modeChosen === "stash";
+    if (state.stashMode) {
+      state.worldText = "";
+      sourceStepLabel.textContent = "// STEP 03";
+      goTo("source");
+    } else {
+      goTo("world");
+    }
   });
 
   // ---------- Screen 2: world ----------
@@ -49,6 +78,7 @@
   });
   btnWorldNext.addEventListener("click", () => {
     state.worldText = inputWorld.value.trim();
+    sourceStepLabel.textContent = "// STEP 04";
     goTo("source");
   });
 
@@ -180,6 +210,7 @@
       output_root: inputOutputRoot.value.trim(),
       use_audio_analysis: toggleAudioAnalysis.checked,
       use_audio_dedupe: toggleAudioDedupe.checked,
+      stash_mode: state.stashMode,
     };
 
     try {
@@ -210,6 +241,9 @@
   function renderResults(data) {
     document.getElementById("results-kit-name").textContent = data.kit_name.toUpperCase();
     document.getElementById("results-path").textContent = data.output_path;
+    document.getElementById("results-mode-badge").textContent = data.stash_mode
+      ? "STASH — ORIGINAL FILENAMES"
+      : "THEMED — RENAMED";
     lastOutputPath = data.output_path;
 
     const stats = [

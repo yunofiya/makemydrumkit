@@ -92,6 +92,20 @@ def _find_unique_dir(base: Path) -> Path:
         i += 1
 
 
+def _unique_name(stem: str, suffix: str, used_names: set[str]) -> str:
+    """Stash-mode naming: keep the original filename, only disambiguating
+    with a "(2)", "(3)", ... suffix if two different source files that
+    survived dedupe happen to share a name (common — lots of packs ship a
+    generic "808 1.wav")."""
+    name = f"{stem}{suffix}"
+    i = 2
+    while name.lower() in used_names:
+        name = f"{stem} ({i}){suffix}"
+        i += 1
+    used_names.add(name.lower())
+    return name
+
+
 def build_drumkit(
     project_folders: list[Path],
     library_search_roots: list[Path],
@@ -100,7 +114,12 @@ def build_drumkit(
     world_text: str,
     use_audio_analysis: bool = True,
     use_audio_dedupe: bool = True,
+    stash_mode: bool = False,
 ) -> BuildResult:
+    """stash_mode=True builds a "stash": same scan/classify/dedupe/rank/cap
+    pipeline, but samples keep their original filenames instead of getting
+    a thematic rename (world_text is ignored in this mode). Useful when you
+    just want your most-used sounds organized, not reworded."""
     flp_files = find_project_flps(project_folders)
 
     filename_index = build_filename_index(library_search_roots) if library_search_roots else None
@@ -126,8 +145,8 @@ def build_drumkit(
             key=lambda u: (-_recency_score(u, now_ts), str(u.resolved_path).lower())
         )
 
-    name_pool = build_name_pool(world_text, producer_name)
-    kit_display_name = f"{_sanitize(producer_name)} Drumkit"
+    name_pool = None if stash_mode else build_name_pool(world_text, producer_name)
+    kit_display_name = f"{_sanitize(producer_name)} {'Stash' if stash_mode else 'Drumkit'}"
     final_output_path = _find_unique_dir(output_root / kit_display_name)
 
     categories: dict[str, CategoryResult] = {}
@@ -140,6 +159,7 @@ def build_drumkit(
         )
         seen_hashes: set[str] = set()
         accepted_fingerprints: list[Fingerprint] = []
+        used_names: set[str] = set()
         dest_dir = final_output_path / result.folder
 
         for usage in per_category[category]:
@@ -166,8 +186,12 @@ def build_drumkit(
                     result.duplicates_skipped += 1
                     continue
 
-            new_word = name_pool.next_name()
-            new_filename = f"{result.tag} - {new_word}{candidate.suffix.lower()}"
+            if stash_mode:
+                new_filename = _unique_name(candidate.stem, candidate.suffix.lower(), used_names)
+            else:
+                new_word = name_pool.next_name()
+                new_filename = f"{result.tag} - {new_word}{candidate.suffix.lower()}"
+                used_names.add(new_filename.lower())
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest_path = dest_dir / new_filename
 

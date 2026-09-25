@@ -122,6 +122,7 @@ def api_build_kit():
     output_root = (data.get("output_root") or "").strip()
     use_audio_analysis = bool(data.get("use_audio_analysis", True))
     use_audio_dedupe = bool(data.get("use_audio_dedupe", True))
+    stash_mode = bool(data.get("stash_mode", False))
 
     if not producer_name:
         return jsonify({"error": "Missing producer name."}), 400
@@ -163,6 +164,7 @@ def api_build_kit():
             world_text=world_text,
             use_audio_analysis=use_audio_analysis,
             use_audio_dedupe=use_audio_dedupe,
+            stash_mode=stash_mode,
         )
     except Exception as e:  # surface a clean error to the UI instead of a 500 stack trace
         return jsonify({"error": f"Build failed: {e}"}), 500
@@ -190,6 +192,7 @@ def api_build_kit():
     return jsonify({
         "kit_name": result.kit_name,
         "output_path": result.output_path,
+        "stash_mode": stash_mode,
         "max_per_category": MAX_PER_CATEGORY,
         "total_unique": result.total_unique,
         "total_flps_scanned": result.total_flps_scanned,
